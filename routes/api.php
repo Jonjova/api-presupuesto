@@ -29,4 +29,18 @@ Route::apiResource('presupuestos', PresupuestoController::class);
 Route::apiResource('ejecuciones', EjecucionMensualController::class);
 Route::apiResource('provisiones', ProvisionController::class);
 
+// Rutas adicionales para funcionalidades específicas
+Route::prefix('categorias')->group(function () {
+    // Obtener categorías por tipo (ingreso/gasto)
+    Route::get('tipo/{type}', [CategoriaController::class, 'byType']);
+    
+    // Obtener solo categorías padre
+    Route::get('principales', [CategoriaController::class, 'index']);
+    
+    // Obtener árbol completo de categorías
+    Route::get('arbol', [CategoriaController::class, 'tree']);
+    
+    // Mover subcategorías
+    Route::patch('{id}/mover', [CategoriaController::class, 'moveSubcategories']);
+});
 
