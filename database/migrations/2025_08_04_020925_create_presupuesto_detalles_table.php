@@ -12,8 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('presupuesto_detalles', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id');
+            $table->foreignId('presupuesto_id')
+                  ->constrained('presupuestos')
+                  ->onDelete('cascade');
+            $table->foreignId('categoria_id')
+                  ->constrained('categorias')
+                  ->onDelete('restrict');
+            $table->decimal('monto_anual', 15, 2)->default(0);
             $table->timestamps();
+
+            $table->unique(['presupuesto_id','categoria_id'], 'ux_detalle_presupuesto_categoria');
         });
     }
 

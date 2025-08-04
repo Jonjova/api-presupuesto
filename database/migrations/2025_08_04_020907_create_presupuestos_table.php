@@ -11,9 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('presupuestos', function (Blueprint $table) {
-            $table->id();
+       Schema::create('presupuestos', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->foreignId('unidad_id')
+                  ->constrained('unidades')
+                  ->onDelete('cascade');
+            $table->year('anio');
             $table->timestamps();
+
+            $table->unique(['unidad_id','anio'], 'ux_presupuesto_unidad_anio');
         });
     }
 

@@ -12,8 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('provision_distribuidas', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id');
+            $table->foreignId('provision_id')
+                  ->constrained('provisiones')
+                  ->onDelete('cascade');
+            $table->year('anio');
+            $table->unsignedTinyInteger('mes');
+            $table->decimal('monto', 15, 2)->default(0);
             $table->timestamps();
+
+            $table->unique(['provision_id','anio','mes'], 'ux_prov_dist_prov_anio_mes');
         });
     }
 

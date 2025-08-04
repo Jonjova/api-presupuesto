@@ -11,9 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ejecucion_mensuals', function (Blueprint $table) {
-            $table->id();
+        Schema::create('ejecucion_mensual', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->foreignId('unidad_id')
+                  ->constrained('unidades')
+                  ->onDelete('cascade');
+            $table->foreignId('categoria_id')
+                  ->constrained('categorias')
+                  ->onDelete('restrict');
+            $table->year('anio');
+            $table->unsignedTinyInteger('mes');
+            $table->decimal('monto', 15, 2)->default(0);
             $table->timestamps();
+
+            $table->unique(['unidad_id','categoria_id','anio','mes'], 'ux_ejecucion_unidad_cat_anio_mes');
         });
     }
 

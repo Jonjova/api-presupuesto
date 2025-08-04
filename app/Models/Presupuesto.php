@@ -8,4 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Presupuesto extends Model
 {
     use HasFactory;
+    
+    protected $fillable = ['unidad_id', 'anio'];
+
+    public function unidad()
+    {
+        return $this->belongsTo(Unidad::class);
+    }
+
+    public function detalles()
+    {
+        return $this->hasMany(PresupuestoDetalle::class);
+    }
 }

@@ -11,8 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('provisions', function (Blueprint $table) {
-            $table->id();
+        Schema::create('provisiones', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->foreignId('unidad_id')
+                  ->constrained('unidades')
+                  ->onDelete('cascade');
+            $table->foreignId('categoria_id')
+                  ->constrained('categorias')
+                  ->onDelete('restrict');
+            $table->string('descripcion', 150)->nullable();
+            $table->decimal('monto_total', 15, 2)->default(0);
+            $table->enum('periodicidad', ['mensual','anual','unica'])->default('anual');
             $table->timestamps();
         });
     }
