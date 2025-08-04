@@ -13,15 +13,18 @@ class Categoria extends Model
     public static $rules = [
         'nombre' => 'required|string|max:255',
         'tipo' => 'required|string|in:ingreso,gasto',
-        'parent_id' => 'nullable|exists:categorias,id'
+        'parent_id' => 'nullable|exists:categorias,id',
+        'subcategorias' => 'sometimes|array',
+        'subcategorias.*.nombre' => 'required_with:subcategorias|string|max:255',
+        'subcategorias.*.tipo' => 'required_with:subcategorias|string|in:ingreso,gasto',
     ];
 
     // Mensajes de error personalizados estáticos
     public static $messages = [
-        'nombre.required' => 'El nombre de la categoría es obligatorio.',
-        'tipo.required' => 'El tipo de categoría es obligatorio.',
-        'tipo.in' => 'El tipo debe ser "ingreso" o "gasto".',
-        'parent_id.exists' => 'La categoría padre seleccionada no existe.'
+        'nombre.required' => 'El nombre de la categoría es obligatorio',
+        'tipo.in' => 'El tipo debe ser "ingreso" o "gasto"',
+        'subcategorias.*.nombre.required_with' => 'Cada subcategoría debe tener un nombre',
+        'subcategorias.*.tipo.in' => 'El tipo de cada subcategoría debe ser "ingreso" o "gasto"',
     ];
 
     public function detallesPresupuesto()
@@ -60,8 +63,6 @@ class Categoria extends Model
     // Método para verificar si una categoría es padre de otra
     public function isAncestorOf($categoryId)
     {
-        return Categoria::where('id', $categoryId)
-            ->where('parent_id', $this->id)
-            ->exists();
+        return Categoria::where('id', $categoryId)->where('parent_id', $this->id)->exists();
     }
 }

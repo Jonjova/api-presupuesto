@@ -1,46 +1,31 @@
 <?php
 
-use App\Http\Controllers\Api\CategoriaController;
-use App\Http\Controllers\Api\EjecucionMensualController;
-use App\Http\Controllers\Api\PresupuestoController;
-use App\Http\Controllers\Api\ProvisionController;
-use App\Http\Controllers\Api\UnidadController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\CategoriaController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
-
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+// Rutas para Categorías
+Route::prefix('categorias')->middleware('api')->group(function () {
+    // Rutas GET personalizadas (definirlas PRIMERO)
+    Route::get('arbol', [CategoriaController::class, 'tree'])->name('categorias.tree');
+    Route::get('principales', [CategoriaController::class, 'index'])->name('categorias.principales');
+    Route::get('tipo/{type}', [CategoriaController::class, 'byType'])->name('categorias.byType');
+    
+    // CRUD estándar (definir DESPUÉS de las rutas personalizadas)
+    Route::get('/', [CategoriaController::class, 'index'])->name('categorias.index');
+    Route::post('/', [CategoriaController::class, 'store'])->name('categorias.store');
+    Route::get('/{id}', [CategoriaController::class, 'show'])
+        ->whereNumber('id')
+        ->name('categorias.show');
+    Route::match(['put', 'patch'], '/{id}', [CategoriaController::class, 'update'])
+        ->whereNumber('id')
+        ->name('categorias.update');
+    Route::delete('/{id}', [CategoriaController::class, 'destroy'])
+        ->whereNumber('id')
+        ->name('categorias.destroy');
 });
 
-Route::apiResource('unidades', UnidadController::class);
-Route::apiResource('categorias', CategoriaController::class);
-Route::apiResource('presupuestos', PresupuestoController::class);
-Route::apiResource('ejecuciones', EjecucionMensualController::class);
-Route::apiResource('provisiones', ProvisionController::class);
-
-// Rutas adicionales para funcionalidades específicas
-Route::prefix('categoria')->group(function () {
-    // Obtener categorías por tipo (ingreso/gasto)
-    Route::get('tipo/{type}', [CategoriaController::class, 'byType']);
-    
-    // Obtener solo categorías padre
-    Route::get('principales', [CategoriaController::class, 'index']);
-    
-    // Obtener árbol completo de categorías
-    Route::get('arbol', [CategoriaController::class, 'tree']);
-
-    // Mover subcategorías
-    Route::patch('{id}/mover', [CategoriaController::class, 'moveSubcategories']);
-});
-
+// Rutas para otros recursos (mantén las existentes)
+Route::apiResource('ejecuciones', 'App\Http\Controllers\Api\EjecucionMensualController');
+Route::apiResource('presupuestos', 'App\Http\Controllers\Api\PresupuestoController');
+Route::apiResource('provisiones', 'App\Http\Controllers\Api\ProvisionController');
+Route::apiResource('unidades', 'App\Http\Controllers\Api\UnidadController');

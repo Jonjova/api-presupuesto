@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Categoria;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class CategoriaController extends Controller
@@ -67,17 +68,46 @@ class CategoriaController extends Controller
         }
 
         try {
-            $categoria = Categoria::create($request->all());
+            DB::beginTransaction();
+
+            // Crear categoría principal
+            $categoria = Categoria::create([
+                'nombre' => $request->nombre,
+                'tipo' => $request->tipo,
+                'parent_id' => $request->parent_id,
+            ]);
+
+            // Crear subcategorías si existen
+            if ($request->has('subcategorias')) {
+                $subcategoriasData = [];
+
+                foreach ($request->subcategorias as $subcategoria) {
+                    $subcategoriasData[] = new Categoria([
+                        'nombre' => $subcategoria['nombre'],
+                        'tipo' => $subcategoria['tipo'],
+                        'parent_id' => $categoria->id,
+                    ]);
+                }
+
+                // Guardar todas las subcategorías de una vez
+                $categoria->subcategorias()->saveMany($subcategoriasData);
+            }
+
+            DB::commit();
+
+            // FORZAR la recarga de la relación con las subcategorías
+            $categoria->load('subcategorias');
 
             return response()->json(
                 [
                     'success' => true,
                     'data' => $categoria,
-                    'message' => 'Categoría creada exitosamente',
+                    'message' => $request->has('subcategorias') ? 'Categoría con subcategorías creadas exitosamente' : 'Categoría creada exitosamente',
                 ],
                 201,
             );
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(
                 [
                     'success' => false,
@@ -87,14 +117,13 @@ class CategoriaController extends Controller
             );
         }
     }
-
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($id)
     {
         try {
-            $categoria = Categoria::with(['parent', 'subcategorias'])->find($id);
+            $categoria = Categoria::with('subcategorias')->find($id);
 
             if (!$categoria) {
                 return response()->json(
@@ -127,15 +156,42 @@ class CategoriaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
         $rules = [
             'nombre' => 'sometimes|required|string|max:255',
             'tipo' => 'sometimes|required|string|in:ingreso,gasto',
-            'parent_id' => 'nullable|exists:categorias,id',
+            'parent_id' => [
+                'nullable',
+                'exists:categorias,id',
+                function ($attribute, $value, $fail) use ($id) {
+                    if ($value == $id) {
+                        $fail('Una categoría no puede ser padre de sí misma');
+                    }
+                    // Verificar jerarquía circular
+                    $potentialParent = Categoria::find($value);
+                    while ($potentialParent) {
+                        if ($potentialParent->id == $id) {
+                            $fail('No puede asignar una categoría descendiente como padre');
+                            break;
+                        }
+                        $potentialParent = $potentialParent->parent;
+                    }
+                },
+            ],
+            'subcategorias' => 'sometimes|array',
+            'subcategorias.*.id' => 'sometimes|required_with:subcategorias|exists:categorias,id,parent_id,' . $id,
+            'subcategorias.*.nombre' => 'required_with:subcategorias|string|max:255',
+            'subcategorias.*.tipo' => 'required_with:subcategorias|string|in:ingreso,gasto',
         ];
 
-        $validator = Validator::make($request->all(), $rules);
+        $messages = [
+            'subcategorias.*.id.exists' => 'La subcategoría no pertenece a esta categoría padre',
+            'subcategorias.*.nombre.required_with' => 'Cada subcategoría debe tener un nombre',
+            'subcategorias.*.tipo.in' => 'El tipo de cada subcategoría debe ser "ingreso" o "gasto"',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
             return response()->json(
@@ -148,61 +204,63 @@ class CategoriaController extends Controller
         }
 
         try {
-            $categoria = Categoria::find($id);
+            DB::beginTransaction();
 
-            if (!$categoria) {
-                return response()->json(
-                    [
-                        'success' => false,
-                        'message' => 'Categoría no encontrada',
-                    ],
-                    404,
-                );
+            // 1. Actualizar la categoría principal
+            $categoria = Categoria::findOrFail($id);
+            $categoria->update($request->only(['nombre', 'tipo', 'parent_id']));
+
+            // 2. Procesar subcategorías si vienen en el request
+            if ($request->has('subcategorias')) {
+                foreach ($request->subcategorias as $subcategoriaData) {
+                    if (isset($subcategoriaData['id'])) {
+                        // 2.1. Actualizar subcategoría existente
+                        $subcategoria = Categoria::where('id', $subcategoriaData['id'])->where('parent_id', $id)->first();
+
+                        if ($subcategoria) {
+                            $subcategoria->update([
+                                'nombre' => $subcategoriaData['nombre'],
+                                'tipo' => $subcategoriaData['tipo'],
+                            ]);
+                        }
+                    } else {
+                        // 2.2. Crear nueva subcategoría
+                        Categoria::create([
+                            'nombre' => $subcategoriaData['nombre'],
+                            'tipo' => $subcategoriaData['tipo'],
+                            'parent_id' => $id,
+                        ]);
+                    }
+                }
+
+                // IMPORTANTE: No eliminamos subcategorías no incluidas
             }
 
-            // Validar que no se asigne como padre a sí misma
-            if ($request->has('parent_id') && $request->parent_id == $id) {
-                return response()->json(
-                    [
-                        'success' => false,
-                        'message' => 'Una categoría no puede ser padre de sí misma',
-                    ],
-                    422,
-                );
-            }
+            DB::commit();
 
-            // Validar que no se convierta en padre de su propio padre
-            if ($request->has('parent_id') && $categoria->isAncestorOf($request->parent_id)) {
-                return response()->json(
-                    [
-                        'success' => false,
-                        'message' => 'No puede asignar una categoría descendiente como padre',
-                    ],
-                    422,
-                );
-            }
-
-            $categoria->update($request->all());
+            // 3. Cargar la categoría con sus relaciones actualizadas
+            $categoria->refresh();
+            $categoria->load('subcategorias');
 
             return response()->json(
                 [
                     'success' => true,
                     'data' => $categoria,
-                    'message' => 'Categoría actualizada exitosamente',
+                    'message' => 'Categoría y subcategorías actualizadas exitosamente',
                 ],
                 200,
             );
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(
                 [
                     'success' => false,
-                    'message' => 'Error al actualizar la categoría: ' . $e->getMessage(),
+                    'message' => 'Error al actualizar: ' . $e->getMessage(),
                 ],
                 500,
             );
         }
     }
-
     /**
      * Remove the specified resource from storage.
      */
@@ -305,7 +363,7 @@ class CategoriaController extends Controller
         }
     }
 
-    public function tree($depth=1)
+    public function tree($depth = 1)
     {
         try {
             // Construir la consulta con eager loading dinámico
