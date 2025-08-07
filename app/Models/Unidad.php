@@ -9,6 +9,7 @@ class Unidad extends Model
 {
     use HasFactory;
     protected $fillable = ['nombre', 'descripcion'];
+    protected $table = 'unidades';
 
     public function presupuestos()
     {

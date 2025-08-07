@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CategoriaController;
+use App\Http\Controllers\Api\EjecucionMensualController;
 
 // Rutas para Categorías
 Route::prefix('categorias')->middleware('api')->group(function () {
@@ -24,8 +25,19 @@ Route::prefix('categorias')->middleware('api')->group(function () {
         ->name('categorias.destroy');
 });
 
+// Rutas adicionales para ejecuciones
+Route::prefix('ejecuciones')->group(function () {
+    Route::get('resumen-anual', [EjecucionMensualController::class, 'resumenAnual'])->name('ejecuciones.resumenAnual');
+    Route::get('por-unidad/{unidadId}', [EjecucionMensualController::class, 'porUnidad'])
+        ->whereNumber('unidadId')
+        ->name('ejecuciones.porUnidad');
+    Route::get('por-categoria/{categoriaId}', [EjecucionMensualController::class, 'porCategoria'])
+        ->whereNumber('categoriaId')
+        ->name('ejecuciones.porCategoria');
+});
 // Rutas para otros recursos (mantén las existentes)
-Route::apiResource('ejecuciones', 'App\Http\Controllers\Api\EjecucionMensualController');
+Route::apiResource('ejecuciones', EjecucionMensualController::class);
+
 Route::apiResource('presupuestos', 'App\Http\Controllers\Api\PresupuestoController');
 Route::apiResource('provisiones', 'App\Http\Controllers\Api\ProvisionController');
 Route::apiResource('unidades', 'App\Http\Controllers\Api\UnidadController');

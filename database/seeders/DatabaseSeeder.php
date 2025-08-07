@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
          $this->call([
             CategoriasIngresosSeeder::class,
             CategoriasEgresosSeeder::class,
+            UnidadSeeder::class,
          ]);
     }
 }
