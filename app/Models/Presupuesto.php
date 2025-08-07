@@ -9,6 +9,7 @@ class Presupuesto extends Model
 {
     use HasFactory;
     
+    protected $table = 'presupuestos';
     protected $fillable = ['unidad_id', 'anio'];
 
     public function unidad()

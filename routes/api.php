@@ -34,9 +34,20 @@ Route::prefix('ejecuciones')->group(function () {
     Route::get('por-categoria/{categoriaId}', [EjecucionMensualController::class, 'porCategoria'])
         ->whereNumber('categoriaId')
         ->name('ejecuciones.porCategoria');
+
+        // CRUD estándar (definir DESPUÉS de las rutas personalizadas)
+    Route::get('/', [EjecucionMensualController::class, 'index'])->name('ejecuciones.index');
+    Route::post('/', [EjecucionMensualController::class, 'store'])->name('ejecuciones.store');
+    Route::get('/{id}', [EjecucionMensualController::class, 'show'])
+        ->whereNumber('id')
+        ->name('ejecuciones.show');
+    Route::match(['put', 'patch'], '/{id}', [EjecucionMensualController::class, 'update'])
+        ->whereNumber('id')
+        ->name('ejecuciones.update');
+    Route::delete('/{id}', [EjecucionMensualController::class, 'destroy'])
+        ->whereNumber('id')
+        ->name('ejecuciones.destroy');
 });
-// Rutas para otros recursos (mantén las existentes)
-Route::apiResource('ejecuciones', EjecucionMensualController::class);
 
 Route::apiResource('presupuestos', 'App\Http\Controllers\Api\PresupuestoController');
 Route::apiResource('provisiones', 'App\Http\Controllers\Api\ProvisionController');

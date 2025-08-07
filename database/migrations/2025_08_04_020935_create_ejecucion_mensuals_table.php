@@ -19,6 +19,9 @@ return new class extends Migration
             $table->foreignId('categoria_id')
                   ->constrained('categorias')
                   ->onDelete('restrict');
+            $table->foreignId('subcategoria_id')
+                  ->constrained('categorias')
+                  ->onDelete('restrict');      
             $table->year('anio');
             $table->unsignedTinyInteger('mes');
             $table->decimal('monto', 15, 2)->default(0);
