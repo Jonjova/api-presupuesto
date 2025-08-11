@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             CategoriasIngresosSeeder::class,
             CategoriasEgresosSeeder::class,
             UnidadSeeder::class,
+            PresupuestoSeeder::class,
          ]);
     }
 }

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('categoria_id')
                   ->constrained('categorias')
                   ->onDelete('restrict');
+            $table->decimal('monto_mensual', 15, 2)->default(0);
             $table->decimal('monto_anual', 15, 2)->default(0);
             $table->timestamps();
 

@@ -19,6 +19,6 @@ class Presupuesto extends Model
 
     public function detalles()
     {
-        return $this->hasMany(PresupuestoDetalle::class);
+        return $this->hasMany(PresupuestoDetalle::class)->with('categoria', 'subcategorias');
     }
 }

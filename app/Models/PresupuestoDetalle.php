@@ -19,4 +19,9 @@ class PresupuestoDetalle extends Model
     {
         return $this->belongsTo(Categoria::class);
     }
+
+     public function subcategorias()
+    {
+        return $this->hasMany(Categoria::class, 'parent_id');
+    }
 }

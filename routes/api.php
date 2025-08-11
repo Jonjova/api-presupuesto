@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\EjecucionMensualController;
+use App\Http\Controllers\Api\PresupuestoController;
 
 // Rutas para Categorías
 Route::prefix('categorias')->middleware('api')->group(function () {
@@ -49,6 +50,20 @@ Route::prefix('ejecuciones')->group(function () {
         ->name('ejecuciones.destroy');
 });
 
-Route::apiResource('presupuestos', 'App\Http\Controllers\Api\PresupuestoController');
+Route::prefix('presupuestos')->group(function () {
+  
+    Route::get('/', [PresupuestoController::class, 'index'])->name('presupuestos.index');
+    Route::post('/', [PresupuestoController::class, 'store'])->name('presupuestos.store');
+    Route::get('/{id}', [PresupuestoController::class, 'show'])
+        ->whereNumber('id')
+        ->name('presupuestos.show');
+    Route::match(['put', 'patch'], '/{id}', [PresupuestoController::class, 'update'])
+        ->whereNumber('id')
+        ->name('presupuestos.update');
+    Route::delete('/{id}', [PresupuestoController::class, 'destroy'])
+        ->whereNumber('id')
+        ->name('presupuestos.destroy');
+});
+
 Route::apiResource('provisiones', 'App\Http\Controllers\Api\ProvisionController');
 Route::apiResource('unidades', 'App\Http\Controllers\Api\UnidadController');
