@@ -15,7 +15,7 @@ class PresupuestoController extends Controller
      */
     public function index()
     {
-        $presupuestos = Presupuesto::with('unidad', 'detalles.subcategorias')->get();
+        $presupuestos = Presupuesto::with('unidad', 'detalles.categoria')->get();
 
         return response()->json(['success' => true, 'data' => $presupuestos]);
     }
